@@ -18,4 +18,4 @@ script: PYTHONPATH=extplugins py.test --cov=afk --cov-report=term-missing afk/te
 
 after_success:
   - pip install python-coveralls
-  - coveralls
+  - coveralls --exclude afk/tests
