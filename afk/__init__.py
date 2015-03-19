@@ -177,9 +177,13 @@ class AfkPlugin(Plugin):
         """
         check all connected players who are not in the spectator team for inactivity.
         """
-        self.verbose2("looking for afk players...")
-        for client in self.console.clients.getList():
-            self.check_client(client)
+        list_of_players = [x for x in self.console.clients.getList() if x.team != TEAM_SPEC]
+        if len(list_of_players) <= 1:
+            self.verbose("only one player in game, skipping AFK check")
+        else:
+            self.verbose2("looking for afk players...")
+            for client in list_of_players:
+                self.check_client(client)
         self.start_check_timer()
 
     def check_client(self, client):

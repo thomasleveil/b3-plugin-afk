@@ -60,12 +60,13 @@ def test_check_client_inactive(plugin, joe):
     assert [call(joe)] == plugin.ask_client.mock_calls
 
 
-def test_ask(plugin, joe):
+def test_ask(plugin, joe, jack):
     # GIVEN
     plugin.inactivity_threshold_second = 0
     joe.message = Mock()
     joe.team = TEAM_RED
     joe.connects(1)
+    jack.connects(2)
     # WHEN
     sleep(.1)
     plugin.search_for_afk()
@@ -73,7 +74,7 @@ def test_ask(plugin, joe):
     assert [call('Are you AFK?')] == joe.message.mock_calls
 
 
-def test_ask_and_no_response(plugin, joe):
+def test_ask_and_no_response(plugin, joe, jack):
     # GIVEN
     plugin.inactivity_threshold_second = 0
     plugin.last_chance_delay = .1
@@ -81,6 +82,7 @@ def test_ask_and_no_response(plugin, joe):
     joe.kick = Mock()
     joe.team = TEAM_RED
     joe.connects(1)
+    jack.connects(2)
     # WHEN
     sleep(.1)
     plugin.search_for_afk()
@@ -90,7 +92,7 @@ def test_ask_and_no_response(plugin, joe):
     assert [call(reason='AFK for too long on this server')] == joe.kick.mock_calls
 
 
-def test_ask_and_response(plugin, joe):
+def test_ask_and_response(plugin, joe, jack):
     # GIVEN
     plugin.inactivity_threshold_second = 0
     plugin.last_chance_delay = .4
@@ -98,6 +100,7 @@ def test_ask_and_response(plugin, joe):
     joe.kick = Mock()
     joe.team = TEAM_RED
     joe.connects(1)
+    jack.connects(2)
     # WHEN
     sleep(.1)
     plugin.search_for_afk()
