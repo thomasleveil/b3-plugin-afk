@@ -219,7 +219,7 @@ class AfkPlugin(Plugin):
             self.debug("%s is already in kick_timers" % client)
             return
         client.message(self.are_you_afk)
-        self.console.say("%s suspected of being AFK, kicking in %ss if no answer" % (client, self.last_chance_delay))
+        self.console.say("%s suspected of being AFK, kicking in %ss if no answer" % (client.name, self.last_chance_delay))
         self.kick_timers[client] = Timer(self.last_chance_delay, self.kick, (client, ))
         self.kick_timers[client].start()
 
