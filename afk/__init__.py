@@ -140,7 +140,8 @@ class AfkPlugin(Plugin):
     #                                                                                                                  #
     ####################################################################################################################
 
-    def on_client_init_activity(self, event):
+    @staticmethod
+    def on_client_init_activity(event):
         """
         initialise property Client.last_activity_time if missing.
 
