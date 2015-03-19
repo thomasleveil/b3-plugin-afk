@@ -34,6 +34,32 @@ def test_check_client_on_spectator(plugin, joe):
     assert 0 == plugin.ask_client.call_count
 
 
+def test_check_client_active(plugin, joe):
+    # GIVEN
+    plugin.ask_client = Mock()
+    joe.team = TEAM_RED
+    joe.connects(1)
+    # WHEN
+    joe.says("hi")
+    plugin.check_client(joe)
+    # THEN
+    assert 0 == plugin.ask_client.call_count
+
+
+def test_check_client_inactive(plugin, joe):
+    # GIVEN
+    plugin.inactivity_threshold_second = 0
+    plugin.ask_client = Mock()
+    joe.team = TEAM_RED
+    joe.connects(1)
+    # WHEN
+    joe.says("hi")
+    sleep(.1)
+    plugin.check_client(joe)
+    # THEN
+    assert [call(joe)] == plugin.ask_client.mock_calls
+
+
 def test_ask(plugin, joe):
     # GIVEN
     joe.message = Mock()

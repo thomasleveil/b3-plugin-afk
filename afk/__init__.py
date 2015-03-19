@@ -196,9 +196,17 @@ class AfkPlugin(Plugin):
         """
         if client.team in (TEAM_SPEC, TEAM_UNKNOWN):
             return
-        if client in self.last_activity_by_player \
-                and self.last_activity_by_player[client] > (time() + self.inactivity_threshold_second):
-            return
+        if client in self.last_activity_by_player:
+            last_activity_time = self.last_activity_by_player[client]
+            current_time = time()
+            self.verbose("last activity for %s: %s (current time: %s, threshold: %s)" % (
+                client.name,
+                last_activity_time,
+                current_time,
+                self.inactivity_threshold_second
+            ))
+            if last_activity_time + self.inactivity_threshold_second > current_time:
+                return
         self.ask_client(client)
 
     def ask_client(self, client):
