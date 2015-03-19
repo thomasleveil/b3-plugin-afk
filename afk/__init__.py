@@ -20,7 +20,7 @@
 from ConfigParser import NoOptionError
 from threading import Timer
 from time import time
-from b3 import TEAM_SPEC, TEAM_UNKNOWN
+from b3 import TEAM_SPEC
 from b3.plugin import Plugin
 from weakref import WeakKeyDictionary
 
@@ -35,7 +35,7 @@ class AfkPlugin(Plugin):
         """
         Plugin.__init__(self, console, config)
 
-        """:type : WeakKeyDictionary of [Client, int]"""
+        """:type : dict[Client, int]"""
         self.last_activity_by_player = None
 
         """:type : int"""
@@ -53,10 +53,10 @@ class AfkPlugin(Plugin):
         """:type : str"""
         self.are_you_afk = None
 
-        """:type : threading.Timer"""
+        """:type : Timer"""
         self.check_timer = None
 
-        """:type : WeakKeyDictionary of [Client, threading.Timer]"""
+        """:type : dict[Client, threading.Timer]"""
         self.kick_timers = WeakKeyDictionary()
 
     def onLoadConfig(self):
@@ -130,7 +130,6 @@ class AfkPlugin(Plugin):
         self.registerEvent(self.console.getEventID('EVT_CLIENT_ACTION'), self.on_client_activity)
 
         self.last_activity_by_player = WeakKeyDictionary()
-        self.penalty_timers = WeakKeyDictionary()
 
     def onEnable(self):
         self.start_check_timer()
@@ -173,7 +172,6 @@ class AfkPlugin(Plugin):
         if event.client in self.kick_timers:
             self.info("cancelling pending kick for %s due to new activity" % event.client)
             self.kick_timers.pop(event.client).cancel()
-
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -225,7 +223,8 @@ class AfkPlugin(Plugin):
             self.verbose("%s is already in kick_timers" % client)
             return
         client.message(self.are_you_afk)
-        self.console.say("%s suspected of being AFK, kicking in %ss if no answer" % (client.name, self.last_chance_delay))
+        self.console.say("%s suspected of being AFK, kicking in %ss if no answer"
+                         % (client.name, self.last_chance_delay))
         self.kick_timers[client] = Timer(self.last_chance_delay, self.kick, (client, ))
         self.kick_timers[client].start()
 
