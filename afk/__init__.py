@@ -184,7 +184,7 @@ class AfkPlugin(Plugin):
         """
         check all connected players who are not in the spectator team for inactivity.
         """
-        self.info("looking for afk players...")
+        self.verbose("looking for afk players...")
         for client in self.console.clients.getList():
             self.check_client(client)
         self.start_check_timer()
@@ -194,12 +194,13 @@ class AfkPlugin(Plugin):
         check if client is afk
         :param client: b3.clients.Client
         """
-        if client.team in (TEAM_SPEC, TEAM_UNKNOWN):
+        if client.team in (TEAM_SPEC,):
+            self.verbose2("%s is in %s team" % (client.name, client.team))
             return
         if client in self.last_activity_by_player:
             last_activity_time = self.last_activity_by_player[client]
             current_time = time()
-            self.verbose("last activity for %s: %s (current time: %s, threshold: %s)" % (
+            self.verbose2("last activity for %s: %s (current time: %s, threshold: %s)" % (
                 client.name,
                 last_activity_time,
                 current_time,
@@ -216,7 +217,7 @@ class AfkPlugin(Plugin):
         :param client : b3.clients.Client
         """
         if client in self.kick_timers:
-            self.debug("%s is already in kick_timers" % client)
+            self.verbose("%s is already in kick_timers" % client)
             return
         client.message(self.are_you_afk)
         self.console.say("%s suspected of being AFK, kicking in %ss if no answer" % (client.name, self.last_chance_delay))
@@ -248,3 +249,9 @@ class AfkPlugin(Plugin):
             for timer in list(self.kick_timers.values()):
                 if timer:
                     timer.cancel()
+
+    def verbose2(self, msg, *args, **kwargs):
+        """
+        Log a VERBOSE2 message to the main log. More "chatty" than a VERBOSE message.
+        """
+        self.console.verbose2('%s: %s' % (self.__class__.__name__, msg), *args, **kwargs)
