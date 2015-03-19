@@ -40,6 +40,9 @@ Take a look at the `@b3/extplugins/afk/conf/plugin_afk.ini` file. All settings a
 Changelog
 ---------
  
+### 1.1 - 2015/03/19
+- do not kick last remaining player on the server even if AFK
+
 ### 1.0 - 2015/03/19
 - initial release
 
