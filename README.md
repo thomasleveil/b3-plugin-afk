@@ -52,7 +52,7 @@ If you have found a bug or have a suggestion for this plugin, please report it o
 
 
 [![Build Status](https://travis-ci.org/thomasleveil/b3-plugin-afk.svg?branch=master)](https://travis-ci.org/thomasleveil/b3-plugin-afk)
-[![Coverage Status](https://coveralls.io/repos/thomasleveil/b3-plugin-afk/badge.png?branch=master)](https://coveralls.io/r/thomasleveil/b3-plugin-afk?branch=master)
+[![Code Health](https://landscape.io/github/thomasleveil/b3-plugin-afk/master/landscape.svg?style=flat)](https://landscape.io/github/thomasleveil/b3-plugin-afk/master)
 
 [B3]: http://www.bigbrotherbot.net/ "BigBrotherBot (B3)"
 [Support]: http://forum.bigbrotherbot.net/ "Support topic on the B3 forums"
