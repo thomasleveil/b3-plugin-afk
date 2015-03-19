@@ -172,7 +172,8 @@ class AfkPlugin(Plugin):
         # cancel eventual pending kick
         if event.client in self.kick_timers:
             self.info("cancelling pending kick for %s due to new activity" % event.client)
-            self.kick_timers[event.client].cancel()
+            self.kick_timers.pop(event.client).cancel()
+
 
     ####################################################################################################################
     #                                                                                                                  #
