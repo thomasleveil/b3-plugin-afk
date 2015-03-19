@@ -194,9 +194,13 @@ class AfkPlugin(Plugin):
         check if client is afk
         :param client: b3.clients.Client
         """
+        if self.is_client_inactive(client):
+            self.ask_client(client)
+
+    def is_client_inactive(self, client):
         if client.team in (TEAM_SPEC,):
             self.verbose2("%s is in %s team" % (client.name, client.team))
-            return
+            return False
         if client in self.last_activity_by_player:
             last_activity_time = self.last_activity_by_player[client]
             current_time = time()
@@ -207,8 +211,8 @@ class AfkPlugin(Plugin):
                 self.inactivity_threshold_second
             ))
             if last_activity_time + self.inactivity_threshold_second > current_time:
-                return
-        self.ask_client(client)
+                return False
+        return True
 
     def ask_client(self, client):
         """
