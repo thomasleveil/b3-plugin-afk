@@ -35,9 +35,6 @@ class AfkPlugin(Plugin):
         """
         Plugin.__init__(self, console, config)
 
-        """:type : dict[Client, int]"""
-        self.last_activity_by_player = None
-
         """:type : int"""
         self.check_frequency_second = 0
 
@@ -129,8 +126,6 @@ class AfkPlugin(Plugin):
         self.registerEvent(self.console.getEventID('EVT_CLIENT_ITEM_PICKUP'), self.on_client_activity)
         self.registerEvent(self.console.getEventID('EVT_CLIENT_ACTION'), self.on_client_activity)
 
-        self.last_activity_by_player = WeakKeyDictionary()
-
     def onEnable(self):
         self.start_check_timer()
 
@@ -147,30 +142,28 @@ class AfkPlugin(Plugin):
 
     def on_client_init_activity(self, event):
         """
-        create an entry in self.last_activity_by_player if missing.
+        initialise property Client.last_activity_time if missing.
 
         :param event: b3.events.Event
         """
         if not event.client:
             return
-
-        if event.client not in self.last_activity_by_player:
-            self.last_activity_by_player[event.client] = time()
+        if not hasattr(event.client, 'last_activity_time'):
+            event.client.last_activity_time = time()
 
     def on_client_activity(self, event):
         """
-        update an entry in self.last_activity_by_player.
+        update Client.last_activity_time.
 
         :param event: b3.events.Event
         """
         if not event.client:
             return
-
-        self.last_activity_by_player[event.client] = time()
+        event.client.last_activity_time = time()
 
         # cancel eventual pending kick
         if event.client in self.kick_timers:
-            self.info("cancelling pending kick for %s due to new activity" % event.client)
+            self.debug("cancelling pending kick for %s due to new activity" % event.client)
             self.kick_timers.pop(event.client).cancel()
 
     ####################################################################################################################
@@ -200,16 +193,15 @@ class AfkPlugin(Plugin):
         if client.team in (TEAM_SPEC,):
             self.verbose2("%s is in %s team" % (client.name, client.team))
             return False
-        if client in self.last_activity_by_player:
-            last_activity_time = self.last_activity_by_player[client]
+        if hasattr(client, 'last_activity_time'):
             current_time = time()
             self.verbose2("last activity for %s: %s (current time: %s, threshold: %s)" % (
                 client.name,
-                last_activity_time,
+                client.last_activity_time,
                 current_time,
                 self.inactivity_threshold_second
             ))
-            if last_activity_time + self.inactivity_threshold_second > current_time:
+            if client.last_activity_time + self.inactivity_threshold_second > current_time:
                 return False
         return True
 
