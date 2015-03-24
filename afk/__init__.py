@@ -56,6 +56,9 @@ class AfkPlugin(Plugin):
         """:type : dict[Client, threading.Timer]"""
         self.kick_timers = WeakKeyDictionary()
 
+        """:type : int"""
+        self.immunity_level = 100
+
     def onLoadConfig(self):
         try:
             self.check_frequency_second = int(60 * self.config.getDuration('settings', 'check_frequency'))
@@ -96,6 +99,17 @@ class AfkPlugin(Plugin):
         except (NoOptionError, ValueError), err:
             self.warning("No value or bad value for settings/are_you_afk. %s", err)
             self.are_you_afk = "Are you AFK?"
+
+        try:
+            self.immunity_level = self.config.getint('settings', 'immunity_level')
+        except NoOptionError:
+            self.info('No value for settings/immunity_level. Using default value : %s' % self.immunity_level)
+        except ValueError, err:
+            self.debug(err)
+            self.warning('Bad value for settings/immunity_level. Using default value : %s' % self.immunity_level)
+        except Exception, err:
+            self.error(err)
+        self.info('immunity_level is %s' % self.immunity_level)
 
         self.stop_check_timer()
         self.stop_kick_timers()
@@ -178,7 +192,10 @@ class AfkPlugin(Plugin):
         check all connected players who are not in the spectator team for inactivity.
         """
         list_of_players = [x for x in self.console.clients.getList()
-                           if x.team != TEAM_SPEC and not getattr(x, 'bot', False)]
+                           if x.team != TEAM_SPEC
+                           and not getattr(x, 'bot', False)
+                           and x.maxLevel < self.immunity_level
+                           ]
         if len(list_of_players) <= 1:
             self.verbose("only one player in game, skipping AFK check")
         else:
@@ -198,6 +215,9 @@ class AfkPlugin(Plugin):
     def is_client_inactive(self, client):
         if getattr(client, 'bot', False):
             self.verbose2("%s is a bot" % client.name)
+            return False
+        if client.maxLevel >= self.immunity_level:
+            self.verbose2("%s is in group %s -> immune" % (client.name, client.maxGroup))
             return False
         if client.team in (TEAM_SPEC,):
             self.verbose2("%s is in %s team" % (client.name, client.team))

@@ -60,3 +60,32 @@ def test_inactivity_threshold(console):
     plugin.onLoadConfig()
     assert 30 == plugin.inactivity_threshold_second
 
+
+def test_immunity_level_missing(console):
+    plugin = plugin_maker_ini(console, dedent("""
+        [settings]
+        """))
+    plugin.start_check_timer = Mock()
+    plugin.onLoadConfig()
+    assert 100 == plugin.immunity_level
+
+
+def test_immunity_level_bad_value(console):
+    plugin = plugin_maker_ini(console, dedent("""
+        [settings]
+        immunity_level: f00
+        """))
+    plugin.start_check_timer = Mock()
+    plugin.onLoadConfig()
+    assert 100 == plugin.immunity_level
+
+
+def test_immunity_level_nominal(console):
+    plugin = plugin_maker_ini(console, dedent("""
+        [settings]
+        immunity_level: 40
+        """))
+    plugin.start_check_timer = Mock()
+    plugin.onLoadConfig()
+    assert 40 == plugin.immunity_level
+

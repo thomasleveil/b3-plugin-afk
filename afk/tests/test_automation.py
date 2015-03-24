@@ -75,6 +75,20 @@ def test_check_bot_inactive(plugin, joe):
     assert [] == plugin.ask_client.mock_calls
 
 
+def test_check_superadmin_inactive(plugin, superadmin):
+    # GIVEN
+    plugin.inactivity_threshold_second = 0
+    plugin.ask_client = Mock()
+    superadmin.team = TEAM_RED
+    superadmin.connects(1)
+    # WHEN
+    superadmin.says("hi")
+    sleep(.1)
+    plugin.check_client(superadmin)
+    # THEN
+    assert [] == plugin.ask_client.mock_calls
+
+
 def test_ask(plugin, joe, jack):
     # GIVEN
     plugin.inactivity_threshold_second = 0

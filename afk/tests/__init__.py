@@ -69,6 +69,15 @@ def plugin_maker_ini(console_obj, conf_content):
 
 
 @pytest.fixture
+def superadmin(console):
+    with logging_disabled():
+        from b3.fake import FakeClient
+    client = FakeClient(console, name="Superadmin", guid="superadmin_guid", groupBits=128, team=TEAM_UNKNOWN)
+    client.clearMessageHistory()
+    return client
+
+
+@pytest.fixture
 def joe(console):
     with logging_disabled():
         from b3.fake import FakeClient
