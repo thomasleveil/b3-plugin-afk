@@ -177,7 +177,8 @@ class AfkPlugin(Plugin):
         """
         check all connected players who are not in the spectator team for inactivity.
         """
-        list_of_players = [x for x in self.console.clients.getList() if x.team != TEAM_SPEC]
+        list_of_players = [x for x in self.console.clients.getList()
+                           if x.team != TEAM_SPEC and not getattr(x, 'bot', False)]
         if len(list_of_players) <= 1:
             self.verbose("only one player in game, skipping AFK check")
         else:
@@ -195,6 +196,9 @@ class AfkPlugin(Plugin):
             self.ask_client(client)
 
     def is_client_inactive(self, client):
+        if getattr(client, 'bot', False):
+            self.verbose2("%s is a bot" % client.name)
+            return False
         if client.team in (TEAM_SPEC,):
             self.verbose2("%s is in %s team" % (client.name, client.team))
             return False

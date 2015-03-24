@@ -60,6 +60,21 @@ def test_check_client_inactive(plugin, joe):
     assert [call(joe)] == plugin.ask_client.mock_calls
 
 
+def test_check_bot_inactive(plugin, joe):
+    # GIVEN
+    plugin.inactivity_threshold_second = 0
+    plugin.ask_client = Mock()
+    joe.team = TEAM_RED
+    joe.bot = True
+    joe.connects(1)
+    # WHEN
+    joe.says("hi")
+    sleep(.1)
+    plugin.check_client(joe)
+    # THEN
+    assert [] == plugin.ask_client.mock_calls
+
+
 def test_ask(plugin, joe, jack):
     # GIVEN
     plugin.inactivity_threshold_second = 0
