@@ -59,62 +59,6 @@ class AfkPlugin(Plugin):
         """:type : dict[Client, threading.Timer]"""
         self.kick_timers = WeakKeyDictionary()
 
-    def onLoadConfig(self):
-        try:
-            self.check_frequency_second = int(60 * self.config.getDuration('settings', 'check_frequency'))
-            self.info('settings/check_frequency: %s sec' % self.check_frequency_second)
-        except (NoOptionError, ValueError), err:
-            self.warning("No value or bad value for settings/check_frequency. %s", err)
-            self.check_frequency_second = 0
-        else:
-            if self.check_frequency_second < 0:
-                self.warning("settings/check_frequency cannot be less than 0")
-                self.check_frequency_second = 0
-
-        try:
-            self.inactivity_threshold_second = int(60 * self.config.getDuration('settings', 'inactivity_threshold'))
-            self.info('settings/inactivity_threshold: %s sec' % self.inactivity_threshold_second)
-        except (NoOptionError, ValueError), err:
-            self.warning("No value or bad value for settings/inactivity_threshold. %s", err)
-            self.inactivity_threshold_second = 0
-        else:
-            if self.inactivity_threshold_second < 30:
-                self.warning("settings/inactivity_threshold cannot be less than 30 sec")
-                self.inactivity_threshold_second = 30
-
-        try:
-            self.kick_reason = self.config.get('settings', 'kick_reason')
-            if len(self.kick_reason.strip()) == 0:
-                raise ValueError()
-            self.info('settings/kick_reason: %s sec' % self.kick_reason)
-        except (NoOptionError, ValueError), err:
-            self.warning("No value or bad value for settings/kick_reason. %s", err)
-            self.kick_reason = "AFK for too long on this server"
-
-        try:
-            self.are_you_afk = self.config.get('settings', 'are_you_afk')
-            if len(self.are_you_afk.strip()) == 0:
-                raise ValueError()
-            self.info('settings/are_you_afk: %s sec' % self.are_you_afk)
-        except (NoOptionError, ValueError), err:
-            self.warning("No value or bad value for settings/are_you_afk. %s", err)
-            self.are_you_afk = "Are you AFK?"
-
-        try:
-            self.immunity_level = self.config.getint('settings', 'immunity_level')
-        except NoOptionError:
-            self.info('No value for settings/immunity_level. Using default value : %s' % self.immunity_level)
-        except ValueError, err:
-            self.debug(err)
-            self.warning('Bad value for settings/immunity_level. Using default value : %s' % self.immunity_level)
-        except Exception, err:
-            self.error(err)
-        self.info('immunity_level is %s' % self.immunity_level)
-
-        self.stop_check_timer()
-        self.stop_kick_timers()
-        self.start_check_timer()
-
     def onStartup(self):
         """
         Initialize plugin.
@@ -149,6 +93,79 @@ class AfkPlugin(Plugin):
         self.info("stopping timers")
         self.stop_check_timer()
         self.stop_kick_timers()
+
+    ####################################################################################################################
+    #                                                                                                                  #
+    #   CONFIG                                                                                                         #
+    #                                                                                                                  #
+    ####################################################################################################################
+
+    def onLoadConfig(self):
+        self.load_conf_check_frequency()
+        self.load_conf_inactivity_threshold()
+        self.load_conf_kick_reason()
+        self.load_conf_are_you_afk()
+        self.load_conf_immunity_level()
+
+        self.stop_check_timer()
+        self.stop_kick_timers()
+        self.start_check_timer()
+
+    def load_conf_check_frequency(self):
+        try:
+            self.check_frequency_second = int(60 * self.config.getDuration('settings', 'check_frequency'))
+            self.info('settings/check_frequency: %s sec' % self.check_frequency_second)
+        except (NoOptionError, ValueError), err:
+            self.warning("No value or bad value for settings/check_frequency. %s", err)
+            self.check_frequency_second = 0
+        else:
+            if self.check_frequency_second < 0:
+                self.warning("settings/check_frequency cannot be less than 0")
+                self.check_frequency_second = 0
+
+    def load_conf_inactivity_threshold(self):
+        try:
+            self.inactivity_threshold_second = int(60 * self.config.getDuration('settings', 'inactivity_threshold'))
+            self.info('settings/inactivity_threshold: %s sec' % self.inactivity_threshold_second)
+        except (NoOptionError, ValueError), err:
+            self.warning("No value or bad value for settings/inactivity_threshold. %s", err)
+            self.inactivity_threshold_second = 0
+        else:
+            if self.inactivity_threshold_second < 30:
+                self.warning("settings/inactivity_threshold cannot be less than 30 sec")
+                self.inactivity_threshold_second = 30
+
+    def load_conf_kick_reason(self):
+        try:
+            self.kick_reason = self.config.get('settings', 'kick_reason')
+            if len(self.kick_reason.strip()) == 0:
+                raise ValueError()
+            self.info('settings/kick_reason: %s sec' % self.kick_reason)
+        except (NoOptionError, ValueError), err:
+            self.warning("No value or bad value for settings/kick_reason. %s", err)
+            self.kick_reason = "AFK for too long on this server"
+
+    def load_conf_are_you_afk(self):
+        try:
+            self.are_you_afk = self.config.get('settings', 'are_you_afk')
+            if len(self.are_you_afk.strip()) == 0:
+                raise ValueError()
+            self.info('settings/are_you_afk: %s sec' % self.are_you_afk)
+        except (NoOptionError, ValueError), err:
+            self.warning("No value or bad value for settings/are_you_afk. %s", err)
+            self.are_you_afk = "Are you AFK?"
+
+    def load_conf_immunity_level(self):
+        try:
+            self.immunity_level = self.config.getint('settings', 'immunity_level')
+        except NoOptionError:
+            self.info('No value for settings/immunity_level. Using default value : %s' % self.immunity_level)
+        except ValueError, err:
+            self.debug(err)
+            self.warning('Bad value for settings/immunity_level. Using default value : %s' % self.immunity_level)
+        except Exception, err:
+            self.error(err)
+        self.info('immunity_level is %s' % self.immunity_level)
 
     ####################################################################################################################
     #                                                                                                                  #
