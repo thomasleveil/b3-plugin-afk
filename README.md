@@ -40,6 +40,11 @@ Take a look at the `@b3/extplugins/afk/conf/plugin_afk.ini` file. All settings a
 Changelog
 ---------
  
+### 1.2 - 2015/03/25
+- do not check bots
+- add immunity level so admins won't get kicked
+- better handling of players disconnection
+ 
 ### 1.1 - 2015/03/19
 - do not kick last remaining player on the server even if AFK
 
