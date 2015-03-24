@@ -51,13 +51,13 @@ class AfkPlugin(Plugin):
         self.are_you_afk = None
 
         """:type : Timer"""
+        self.immunity_level = 100
+
+        """:type : int"""
         self.check_timer = None
 
         """:type : dict[Client, threading.Timer]"""
         self.kick_timers = WeakKeyDictionary()
-
-        """:type : int"""
-        self.immunity_level = 100
 
     def onLoadConfig(self):
         try:
@@ -140,6 +140,8 @@ class AfkPlugin(Plugin):
         self.registerEvent(self.console.getEventID('EVT_CLIENT_ITEM_PICKUP'), self.on_client_activity)
         self.registerEvent(self.console.getEventID('EVT_CLIENT_ACTION'), self.on_client_activity)
 
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_DISCONNECT'), self.on_client_disconnect)
+
     def onEnable(self):
         self.start_check_timer()
 
@@ -165,6 +167,15 @@ class AfkPlugin(Plugin):
             return
         if not hasattr(event.client, 'last_activity_time'):
             event.client.last_activity_time = time()
+
+    def on_client_disconnect(self, event):
+        """
+        make sure to clean eventual timers when a client disconnects
+
+        :param event: b3.events.Event
+        """
+        self.clear_kick_timer_for_client(event.client)
+        delattr(event.client, "last_activity_time")
 
     def on_client_activity(self, event):
         """
@@ -271,9 +282,15 @@ class AfkPlugin(Plugin):
 
     def stop_kick_timers(self):
         if self.kick_timers:
-            for timer in list(self.kick_timers.values()):
+            for client in list(self.kick_timers.keys()):
+                timer = self.kick_timers.pop(client)
                 if timer:
                     timer.cancel()
+
+    def clear_kick_timer_for_client(self, client):
+        if self.kick_timers:
+            if client in self.kick_timers:
+                self.kick_timers.pop(client).cancel()
 
     def verbose2(self, msg, *args, **kwargs):
         """

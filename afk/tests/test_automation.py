@@ -200,3 +200,23 @@ def test_check_timer_disabled(plugin):
     # THEN
     assert 0 == plugin.search_for_afk.call_count
 
+
+def test_client_disconnection_clears_kick_timer(plugin, joe):
+    # GIVEN
+    plugin.check_frequency_second = 0
+    plugin.last_chance_delay = 10
+    # WHEN
+    joe.connects(1)
+    # THEN
+    assert hasattr(joe, 'last_activity_time')
+    # WHEN
+    plugin.ask_client(joe)
+    # THEN
+    assert 1 == len(plugin.kick_timers)
+    assert joe in plugin.kick_timers
+    joe.disconnects()
+    # THEN
+    assert 0 == len(plugin.kick_timers)
+    assert joe not in plugin.kick_timers
+    assert not hasattr(joe, 'last_activity_time')
+
