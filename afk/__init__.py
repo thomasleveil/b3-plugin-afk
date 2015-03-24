@@ -220,9 +220,9 @@ class AfkPlugin(Plugin):
         check all connected players who are not in the spectator team for inactivity.
         """
         list_of_players = [x for x in self.console.clients.getList()
-                           if x.team != TEAM_SPEC
-                           and not getattr(x, 'bot', False)
-                           and x.maxLevel < self.immunity_level
+                           if x.team != TEAM_SPEC and
+                           not getattr(x, 'bot', False) and
+                           x.maxLevel < self.immunity_level
                            ]
         if len(list_of_players) <= 1:
             self.verbose("only one player in game, skipping AFK check")
