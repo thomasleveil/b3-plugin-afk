@@ -28,6 +28,7 @@ def test_check_client_on_spectator(plugin, joe):
     plugin.ask_client = Mock()
     joe.team = TEAM_SPEC
     joe.connects(1)
+    joe.says("hi")
     # WHEN
     plugin.check_client(joe)
     # THEN
@@ -95,7 +96,9 @@ def test_ask(plugin, joe, jack):
     joe.message = Mock()
     joe.team = TEAM_RED
     joe.connects(1)
+    joe.says("hi")
     jack.connects(2)
+    jack.says("hi")
     # WHEN
     sleep(.1)
     plugin.search_for_afk()
@@ -111,7 +114,9 @@ def test_ask_and_no_response(plugin, joe, jack):
     joe.kick = Mock()
     joe.team = TEAM_RED
     joe.connects(1)
+    joe.says("hi")
     jack.connects(2)
+    jack.says("hi")
     # WHEN
     sleep(.1)
     plugin.search_for_afk()
@@ -129,7 +134,9 @@ def test_ask_and_response(plugin, joe, jack):
     joe.kick = Mock()
     joe.team = TEAM_RED
     joe.connects(1)
+    joe.says("hi")
     jack.connects(2)
+    jack.says("hi")
     # WHEN
     sleep(.1)
     plugin.search_for_afk()
@@ -151,7 +158,9 @@ def test_ask_and_make_kill(plugin, joe, jack):
     joe.kick = Mock()
     joe.team = TEAM_RED
     joe.connects(1)
+    joe.says("hi")
     jack.connects(2)
+    jack.says("hi")
     # WHEN
     sleep(.1)
     plugin.search_for_afk()
@@ -168,6 +177,7 @@ def test_ask_and_make_kill(plugin, joe, jack):
 def test_kick(plugin, joe):
     # GIVEN
     joe.kick = Mock()
+    joe.last_activity_time = 0
     # WHEN
     plugin.kick(joe)
     # THEN
@@ -207,6 +217,7 @@ def test_client_disconnection_clears_kick_timer(plugin, joe):
     plugin.last_chance_delay = 10
     # WHEN
     joe.connects(1)
+    joe.says("hi")
     # THEN
     assert hasattr(joe, 'last_activity_time')
     # WHEN

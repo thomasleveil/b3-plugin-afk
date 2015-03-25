@@ -40,6 +40,10 @@ Take a look at the `@b3/extplugins/afk/conf/plugin_afk.ini` file. All settings a
 Changelog
 ---------
  
+### 1.3 - 2015/03/25
+- fix inactivity recognition that would produce false positives in some cases
+- cancel all checks on map change or round start to give time to players to load the map
+
 ### 1.2 - 2015/03/25
 - do not check bots
 - add immunity level so admins won't get kicked

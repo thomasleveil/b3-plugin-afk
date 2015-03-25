@@ -25,7 +25,7 @@ from b3.plugin import Plugin
 from weakref import WeakKeyDictionary
 
 __author__ = "Thomas LEVEIL"
-__version__ = "1.2"
+__version__ = "1.3"
 
 
 class AfkPlugin(Plugin):
@@ -34,6 +34,8 @@ class AfkPlugin(Plugin):
         Build the plugin object.
         """
         Plugin.__init__(self, console, config)
+
+        self.MIN_INGAME_PLAYERS = 1
 
         """:type : int"""
         self.check_frequency_second = 0
@@ -63,11 +65,9 @@ class AfkPlugin(Plugin):
         """
         Initialize plugin.
         """
-        # register events needed
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_CONNECT'), self.on_client_init_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.on_client_init_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_JOIN'), self.on_client_init_activity)
-
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_JOIN'), self.on_client_activity)
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_CHANGE'), self.on_client_activity)
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_CHANGE2'), self.on_client_activity)
         self.registerEvent(self.console.getEventID('EVT_CLIENT_SAY'), self.on_client_activity)
         self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_SAY'), self.on_client_activity)
         self.registerEvent(self.console.getEventID('EVT_CLIENT_SQUAD_SAY'), self.on_client_activity)
@@ -85,6 +85,10 @@ class AfkPlugin(Plugin):
         self.registerEvent(self.console.getEventID('EVT_CLIENT_ACTION'), self.on_client_activity)
 
         self.registerEvent(self.console.getEventID('EVT_CLIENT_DISCONNECT'), self.on_client_disconnect)
+        self.registerEvent(self.console.getEventID('EVT_GAME_ROUND_START'), self.on_game_break)
+        self.registerEvent(self.console.getEventID('EVT_GAME_ROUND_END'), self.on_game_break)
+        self.registerEvent(self.console.getEventID('EVT_GAME_WARMUP'), self.on_game_break)
+        self.registerEvent(self.console.getEventID('EVT_GAME_MAP_CHANGE'), self.on_game_break)
 
     def onEnable(self):
         self.start_check_timer()
@@ -173,18 +177,6 @@ class AfkPlugin(Plugin):
     #                                                                                                                  #
     ####################################################################################################################
 
-    @staticmethod
-    def on_client_init_activity(event):
-        """
-        initialise property Client.last_activity_time if missing.
-
-        :param event: b3.events.Event
-        """
-        if not event.client:
-            return
-        if not hasattr(event.client, 'last_activity_time'):
-            event.client.last_activity_time = time()
-
     def on_client_disconnect(self, event):
         """
         make sure to clean eventual timers when a client disconnects
@@ -202,12 +194,21 @@ class AfkPlugin(Plugin):
         """
         if not event.client:
             return
-        event.client.last_activity_time = time()
-
-        # cancel eventual pending kick
         if event.client in self.kick_timers:
-            self.debug("cancelling pending kick for %s due to new activity" % event.client)
-            self.kick_timers.pop(event.client).cancel()
+            event.client.message("OK, you are not AFK")
+        event.client.last_activity_time = time()
+        self.clear_kick_timer_for_client(event.client)
+
+    def on_game_break(self, _):
+        """
+        Clear all last activity records so no one can be kick before he has time to join the game.
+        This is to prevent player with slow computer to get kicked while loading the map at round start.
+
+        """
+        self.info("game break, clearing afk timers")
+        self.stop_kick_timers()
+        for client in [x for x in self.console.clients.getList() if hasattr(x, 'last_activity_time')]:
+            del client.last_activity_time
 
     ####################################################################################################################
     #                                                                                                                  #
@@ -221,11 +222,10 @@ class AfkPlugin(Plugin):
         """
         list_of_players = [x for x in self.console.clients.getList()
                            if x.team != TEAM_SPEC and
-                           not getattr(x, 'bot', False) and
-                           x.maxLevel < self.immunity_level
+                           not getattr(x, 'bot', False)
                            ]
-        if len(list_of_players) <= 1:
-            self.verbose("only one player in game, skipping AFK check")
+        if len(list_of_players) <= self.MIN_INGAME_PLAYERS:
+            self.verbose("too few players in game, skipping AFK check")
         else:
             self.verbose2("looking for afk players...")
             for client in list_of_players:
@@ -250,17 +250,12 @@ class AfkPlugin(Plugin):
         if client.team in (TEAM_SPEC,):
             self.verbose2("%s is in %s team" % (client.name, client.team))
             return False
-        if hasattr(client, 'last_activity_time'):
-            current_time = time()
-            self.verbose2("last activity for %s: %s (current time: %s, threshold: %s)" % (
-                client.name,
-                client.last_activity_time,
-                current_time,
-                self.inactivity_threshold_second
-            ))
-            if client.last_activity_time + self.inactivity_threshold_second > current_time:
-                return False
-        return True
+        if not hasattr(client, 'last_activity_time'):
+            self.verbose2("%s has no last activity time recorded, cannot check" % client.name)
+            return False
+        inactivity_duration = time() - client.last_activity_time
+        self.verbose2("last activity for %s was %0.1fs ago" % (client.name, inactivity_duration))
+        return inactivity_duration > self.inactivity_threshold_second
 
     def ask_client(self, client):
         """
@@ -274,22 +269,26 @@ class AfkPlugin(Plugin):
         client.message(self.are_you_afk)
         self.console.say("%s suspected of being AFK, kicking in %ss if no answer"
                          % (client.name, self.last_chance_delay))
-        self.kick_timers[client] = Timer(self.last_chance_delay, self.kick, (client, ))
-        self.kick_timers[client].start()
+        t = Timer(self.last_chance_delay, self.kick, (client, ))
+        t.start()
+        self.kick_timers[client] = t
 
     def kick(self, client):
         """
         kick a player after showing a message on the server
         :param client: the player to kick
         """
-        self.console.say("kicking %s: %s" % (client.name, self.kick_reason))
-        client.kick(reason=self.kick_reason)
+        if self.is_client_inactive(client):
+            self.console.say("kicking %s: %s" % (client.name, self.kick_reason))
+            client.kick(reason=self.kick_reason)
 
     def start_check_timer(self):
         """
         start a timer for the next check
         """
         if self.check_frequency_second > 0:
+            if self.check_timer:
+                self.check_timer.cancel()
             self.check_timer = Timer(self.check_frequency_second, self.search_for_afk)
             self.check_timer.start()
 
@@ -308,6 +307,7 @@ class AfkPlugin(Plugin):
         if self.kick_timers:
             if client in self.kick_timers:
                 self.kick_timers.pop(client).cancel()
+                self.info("cancelling pending kick for %s" % client)
 
     def verbose2(self, msg, *args, **kwargs):
         """
