@@ -25,7 +25,7 @@ from b3.plugin import Plugin
 from weakref import WeakKeyDictionary
 
 __author__ = "Thomas LEVEIL"
-__version__ = "1.3"
+__version__ = "1.4"
 
 
 class AfkPlugin(Plugin):
@@ -184,7 +184,8 @@ class AfkPlugin(Plugin):
         :param event: b3.events.Event
         """
         self.clear_kick_timer_for_client(event.client)
-        delattr(event.client, "last_activity_time")
+        if hasattr(event.client, 'last_activity_time'):
+            del event.client.last_activity_time
 
     def on_client_activity(self, event):
         """
@@ -254,8 +255,10 @@ class AfkPlugin(Plugin):
             self.verbose2("%s has no last activity time recorded, cannot check" % client.name)
             return False
         inactivity_duration = time() - client.last_activity_time
-        self.verbose2("last activity for %s was %0.1fs ago" % (client.name, inactivity_duration))
-        return inactivity_duration > self.inactivity_threshold_second
+        if inactivity_duration > self.inactivity_threshold_second:
+            self.verbose2("last activity {:5.1f} ago for {!r}".format(inactivity_duration, client))
+            return True
+        return False
 
     def ask_client(self, client):
         """
@@ -266,6 +269,7 @@ class AfkPlugin(Plugin):
         if client in self.kick_timers:
             self.verbose("%s is already in kick_timers" % client)
             return
+        self.info("%r suspected of being AFK")
         client.message(self.are_you_afk)
         self.console.say("%s suspected of being AFK, kicking in %ss if no answer"
                          % (client.name, self.last_chance_delay))
@@ -279,7 +283,7 @@ class AfkPlugin(Plugin):
         :param client: the player to kick
         """
         if self.is_client_inactive(client):
-            self.console.say("kicking %s: %s" % (client.name, self.kick_reason))
+            self.info("kicking %r" % client)
             client.kick(reason=self.kick_reason)
 
     def start_check_timer(self):
