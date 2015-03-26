@@ -94,6 +94,20 @@ class AfkPlugin(Plugin):
         self.registerEvent(self.console.getEventID('EVT_GAME_WARMUP'), self.on_game_break)
         self.registerEvent(self.console.getEventID('EVT_GAME_MAP_CHANGE'), self.on_game_break)
 
+        if self.console.gameName in ('iourt41', 'iourt42'):
+            self.registerEvent(self.console.getEventID('EVT_CLIENT_GEAR_CHANGE'), self.on_client_activity)
+
+        if self.console.gameName == 'iourt42':
+            self.registerEvent(self.console.getEventID('EVT_CLIENT_RADIO'), self.on_client_activity)
+            self.registerEvent(self.console.getEventID('EVT_CLIENT_CALLVOTE'), self.on_client_activity)
+            self.registerEvent(self.console.getEventID('EVT_CLIENT_VOTE'), self.on_client_activity)
+            self.registerEvent(self.console.getEventID('EVT_CLIENT_JUMP_RUN_START'), self.on_client_activity)
+            self.registerEvent(self.console.getEventID('EVT_CLIENT_JUMP_RUN_STOP'), self.on_client_activity)
+            self.registerEvent(self.console.getEventID('EVT_CLIENT_JUMP_RUN_CANCEL'), self.on_client_activity)
+            self.registerEvent(self.console.getEventID('EVT_CLIENT_POS_SAVE'), self.on_client_activity)
+            self.registerEvent(self.console.getEventID('EVT_CLIENT_POS_LOAD'), self.on_client_activity)
+            self.registerEvent(self.console.getEventID('EVT_CLIENT_GOTO'), self.on_client_activity)
+
     def onDisable(self):
         self.info("stopping timers")
         self.stop_kick_timers()
