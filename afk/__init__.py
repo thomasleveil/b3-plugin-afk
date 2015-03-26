@@ -319,6 +319,7 @@ class AfkPlugin(Plugin):
         kick a player if conditions are met
         :param client: the player to kick
         """
+        self.clear_kick_timer_for_client(client)
         if self.count_ingame_humans() <= self.min_ingame_humans:
             self.info("not kicking %s after all since they are too few humans left on the server" % client)
             return
@@ -337,7 +338,6 @@ class AfkPlugin(Plugin):
         if self.kick_timers:
             if client in self.kick_timers:
                 self.kick_timers.pop(client).cancel()
-                self.info("cancelling pending kick for %s" % client)
 
     def verbose2(self, msg, *args, **kwargs):
         """
