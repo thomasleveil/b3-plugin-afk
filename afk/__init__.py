@@ -44,7 +44,7 @@ class AfkPlugin(Plugin):
         self.inactivity_threshold_second = 50
 
         """:type : int"""
-        self.last_chance_delay = 15
+        self.last_chance_delay = 20
 
         """:type : str"""
         self.kick_reason = None
