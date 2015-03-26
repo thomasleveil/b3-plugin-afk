@@ -25,7 +25,7 @@ from b3.plugin import Plugin
 from weakref import WeakKeyDictionary
 
 __author__ = "Thomas LEVEIL"
-__version__ = "1.4"
+__version__ = "1.5"
 
 
 class AfkPlugin(Plugin):
@@ -35,13 +35,13 @@ class AfkPlugin(Plugin):
         """
         Plugin.__init__(self, console, config)
 
-        self.MIN_INGAME_PLAYERS = 1
+        self.min_ingame_humans = 1
 
         """:type : int"""
-        self.check_frequency_second = 0
+        self.consecutive_deaths_threshold = 3
 
         """:type : int"""
-        self.inactivity_threshold_second = None
+        self.inactivity_threshold_second = 50
 
         """:type : int"""
         self.last_chance_delay = 15
@@ -65,6 +65,8 @@ class AfkPlugin(Plugin):
         """
         Initialize plugin.
         """
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_CONNECT'), self.on_client_activity)
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.on_client_activity)
         self.registerEvent(self.console.getEventID('EVT_CLIENT_JOIN'), self.on_client_activity)
         self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_CHANGE'), self.on_client_activity)
         self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_CHANGE2'), self.on_client_activity)
@@ -72,11 +74,9 @@ class AfkPlugin(Plugin):
         self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_SAY'), self.on_client_activity)
         self.registerEvent(self.console.getEventID('EVT_CLIENT_SQUAD_SAY'), self.on_client_activity)
         self.registerEvent(self.console.getEventID('EVT_CLIENT_PRIVATE_SAY'), self.on_client_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_KILL'), self.on_client_activity)
         self.registerEvent(self.console.getEventID('EVT_CLIENT_GIB'), self.on_client_activity)
         self.registerEvent(self.console.getEventID('EVT_CLIENT_GIB_TEAM'), self.on_client_activity)
         self.registerEvent(self.console.getEventID('EVT_CLIENT_GIB_SELF'), self.on_client_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_SUICIDE'), self.on_client_activity)
         self.registerEvent(self.console.getEventID('EVT_CLIENT_KILL_TEAM'), self.on_client_activity)
         self.registerEvent(self.console.getEventID('EVT_CLIENT_DAMAGE'), self.on_client_activity)
         self.registerEvent(self.console.getEventID('EVT_CLIENT_DAMAGE_SELF'), self.on_client_activity)
@@ -84,18 +84,18 @@ class AfkPlugin(Plugin):
         self.registerEvent(self.console.getEventID('EVT_CLIENT_ITEM_PICKUP'), self.on_client_activity)
         self.registerEvent(self.console.getEventID('EVT_CLIENT_ACTION'), self.on_client_activity)
 
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_KILL'), self.on_kill)
+        self.registerEvent(self.console.getEventID('EVT_CLIENT_SUICIDE'), self.on_kill)
+
         self.registerEvent(self.console.getEventID('EVT_CLIENT_DISCONNECT'), self.on_client_disconnect)
+
         self.registerEvent(self.console.getEventID('EVT_GAME_ROUND_START'), self.on_game_break)
         self.registerEvent(self.console.getEventID('EVT_GAME_ROUND_END'), self.on_game_break)
         self.registerEvent(self.console.getEventID('EVT_GAME_WARMUP'), self.on_game_break)
         self.registerEvent(self.console.getEventID('EVT_GAME_MAP_CHANGE'), self.on_game_break)
 
-    def onEnable(self):
-        self.start_check_timer()
-
     def onDisable(self):
         self.info("stopping timers")
-        self.stop_check_timer()
         self.stop_kick_timers()
 
     ####################################################################################################################
@@ -105,39 +105,48 @@ class AfkPlugin(Plugin):
     ####################################################################################################################
 
     def onLoadConfig(self):
-        self.load_conf_check_frequency()
+        self.load_conf_min_ingame_humans()
+        self.load_conf_consecutive_deaths_threshold()
         self.load_conf_inactivity_threshold()
         self.load_conf_kick_reason()
         self.load_conf_are_you_afk()
         self.load_conf_immunity_level()
-
-        self.stop_check_timer()
         self.stop_kick_timers()
-        self.start_check_timer()
 
-    def load_conf_check_frequency(self):
+    def load_conf_min_ingame_humans(self):
         try:
-            self.check_frequency_second = int(60 * self.config.getDuration('settings', 'check_frequency'))
-            self.info('settings/check_frequency: %s sec' % self.check_frequency_second)
+            self.min_ingame_humans = self.config.getint('settings', 'min_ingame_humans')
         except (NoOptionError, ValueError), err:
-            self.warning("No value or bad value for settings/check_frequency. %s", err)
-            self.check_frequency_second = 0
+            self.warning("No value or bad value for settings/min_ingame_humans. %s", err)
         else:
-            if self.check_frequency_second < 0:
-                self.warning("settings/check_frequency cannot be less than 0")
-                self.check_frequency_second = 0
+            if self.min_ingame_humans < 0:
+                self.warning("settings/min_ingame_humans cannot be less than 0")
+                self.min_ingame_humans = 0
+        self.info('settings/min_ingame_humans: %s ' % self.min_ingame_humans)
+
+
+
+    def load_conf_consecutive_deaths_threshold(self):
+        try:
+            self.consecutive_deaths_threshold = self.config.getint('settings', 'consecutive_deaths_threshold')
+        except (NoOptionError, ValueError), err:
+            self.warning("No value or bad value for settings/consecutive_deaths_threshold. %s", err)
+        else:
+            if self.consecutive_deaths_threshold < 1:
+                self.warning("settings/consecutive_deaths_threshold cannot be less than 1")
+                self.consecutive_deaths_threshold = 1
+        self.info('settings/consecutive_deaths_threshold: %s ' % self.consecutive_deaths_threshold)
 
     def load_conf_inactivity_threshold(self):
         try:
             self.inactivity_threshold_second = int(60 * self.config.getDuration('settings', 'inactivity_threshold'))
-            self.info('settings/inactivity_threshold: %s sec' % self.inactivity_threshold_second)
         except (NoOptionError, ValueError), err:
             self.warning("No value or bad value for settings/inactivity_threshold. %s", err)
-            self.inactivity_threshold_second = 0
         else:
             if self.inactivity_threshold_second < 30:
                 self.warning("settings/inactivity_threshold cannot be less than 30 sec")
                 self.inactivity_threshold_second = 30
+        self.info('settings/inactivity_threshold: %s sec' % self.inactivity_threshold_second)
 
     def load_conf_kick_reason(self):
         try:
@@ -187,17 +196,46 @@ class AfkPlugin(Plugin):
         if hasattr(event.client, 'last_activity_time'):
             del event.client.last_activity_time
 
-    def on_client_activity(self, event):
+    def count_ingame_humans(self):
+        """
+        :return: int the number of humans who are not spectator
+        """
+        return len([x for x in self.console.clients.getList() if not x.bot and x.team != TEAM_SPEC])
+
+    def on_kill(self, event):
+        self.on_client_activity(event)
+        if event.target and event.target == event.client:
+            self.verbose2("suicide: not considered as a death as player is active")
+            return
+        if not hasattr(event.target, "afk_death_count"):
+            event.target.afk_death_count = 0
+        event.target.afk_death_count += 1
+        ingame_humans = self.count_ingame_humans()
+        self.verbose2("%r.afk_death_count: %s, last activity: %.1fs ago, in-game humans: %s" % (
+            event.target,
+            event.target.afk_death_count,
+            (time() - getattr(event.target, 'last_activity_time', time())),
+            ingame_humans
+        ))
+        if event.target.afk_death_count >= self.consecutive_deaths_threshold and \
+           ingame_humans > self.min_ingame_humans:
+            self.check_client(event.target)
+
+    def on_client_activity(self, event, when=None):
         """
         update Client.last_activity_time.
 
         :param event: b3.events.Event
+        :param when: int (optional) the time the activity happened. If None, current time is used.
         """
         if not event.client:
             return
+        if when is None:
+            when = time()
         if event.client in self.kick_timers:
             event.client.message("OK, you are not AFK")
-        event.client.last_activity_time = time()
+        event.client.last_activity_time = when
+        event.client.afk_death_count = 0
         self.clear_kick_timer_for_client(event.client)
 
     def on_game_break(self, _):
@@ -210,28 +248,13 @@ class AfkPlugin(Plugin):
         self.stop_kick_timers()
         for client in [x for x in self.console.clients.getList() if hasattr(x, 'last_activity_time')]:
             del client.last_activity_time
+            del client.afk_death_count
 
     ####################################################################################################################
     #                                                                                                                  #
     #   OTHERS                                                                                                         #
     #                                                                                                                  #
     ####################################################################################################################
-
-    def search_for_afk(self):
-        """
-        check all connected players who are not in the spectator team for inactivity.
-        """
-        list_of_players = [x for x in self.console.clients.getList()
-                           if x.team != TEAM_SPEC and
-                           not getattr(x, 'bot', False)
-                           ]
-        if len(list_of_players) <= self.MIN_INGAME_PLAYERS:
-            self.verbose("too few players in game, skipping AFK check")
-        else:
-            self.verbose2("looking for afk players...")
-            for client in list_of_players:
-                self.check_client(client)
-        self.start_check_timer()
 
     def check_client(self, client):
         """
@@ -269,36 +292,25 @@ class AfkPlugin(Plugin):
         if client in self.kick_timers:
             self.verbose("%s is already in kick_timers" % client)
             return
-        self.info("%r suspected of being AFK")
+        self.info("%r suspected of being AFK" % client)
         client.message(self.are_you_afk)
         self.console.say("%s suspected of being AFK, kicking in %ss if no answer"
                          % (client.name, self.last_chance_delay))
-        t = Timer(self.last_chance_delay, self.kick, (client, ))
+        t = Timer(self.last_chance_delay, self.kick_client, (client, ))
         t.start()
         self.kick_timers[client] = t
 
-    def kick(self, client):
+    def kick_client(self, client):
         """
-        kick a player after showing a message on the server
+        kick a player if conditions are met
         :param client: the player to kick
         """
+        if self.count_ingame_humans() <= self.min_ingame_humans:
+            self.info("not kicking %s after all since they are too few humans left on the server" % client)
+            return
         if self.is_client_inactive(client):
             self.info("kicking %r" % client)
             client.kick(reason=self.kick_reason)
-
-    def start_check_timer(self):
-        """
-        start a timer for the next check
-        """
-        if self.check_frequency_second > 0:
-            if self.check_timer:
-                self.check_timer.cancel()
-            self.check_timer = Timer(self.check_frequency_second, self.search_for_afk)
-            self.check_timer.start()
-
-    def stop_check_timer(self):
-        if self.check_timer:
-            self.check_timer.cancel()
 
     def stop_kick_timers(self):
         if self.kick_timers:

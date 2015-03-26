@@ -93,3 +93,12 @@ def jack(console):
     client = FakeClient(console, name="Jack", guid="jack_guid", groupBits=1, team=TEAM_UNKNOWN)
     client.clearMessageHistory()
     return client
+
+
+@pytest.fixture
+def bot(console):
+    with logging_disabled():
+        from b3.fake import FakeClient
+    client = FakeClient(console, name="Bot", guid="bot_guid", groupBits=1, team=TEAM_UNKNOWN, bot=True)
+    client.clearMessageHistory()
+    return client

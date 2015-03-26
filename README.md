@@ -40,6 +40,9 @@ Take a look at the `@b3/extplugins/afk/conf/plugin_afk.ini` file. All settings a
 Changelog
 ---------
 
+### 1.5 - 2015/03/26
+- players are checked for inactivity after a certain number of consecutive deaths (instead of every x sec)
+
 ### 1.4 - 2015/03/25
 - do not announce kick made by the afk plugin, B3 already does that when kicking
 - improve logs
