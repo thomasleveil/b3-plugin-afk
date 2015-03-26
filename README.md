@@ -5,6 +5,16 @@ A [BigBrotherBot][B3] plugin taking care of AFK players on your game server.
 This plugin monitors your game server for inactive players. If a player is suspected to be away from keyboard (AFK)
 B3 will ask him if he is. If no answer if given and no activity is detected in a timely manner, the player is kicked.
 
+How does the plugin detect AFK?
+-------------------------------
+
+Let say `consecutive_deaths_threshold` is `2` and `inactivity_threshold` is `30s` in the plugin config file
+
+- If a player is afk and gets killed a 1st time, nothing happens
+- If that player gets killed a second time while having shown no activity in between, he will be checked for inactivity
+- Upon being checked, if his last activity is older than 30s, then B3 asks the player if he is AFK
+- If no response or activity is detected in the next 20s, then the player is kicked
+
 
 Download
 --------
