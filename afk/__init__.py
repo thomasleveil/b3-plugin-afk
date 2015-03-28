@@ -25,7 +25,7 @@ from b3.plugin import Plugin
 from weakref import WeakKeyDictionary
 
 __author__ = "Thomas LEVEIL"
-__version__ = "1.5"
+__version__ = "1.6"
 
 
 class AfkPlugin(Plugin):
@@ -65,48 +65,60 @@ class AfkPlugin(Plugin):
         """
         Initialize plugin.
         """
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_CONNECT'), self.on_client_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_AUTH'), self.on_client_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_JOIN'), self.on_client_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_CHANGE'), self.on_client_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_CHANGE2'), self.on_client_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_SAY'), self.on_client_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_TEAM_SAY'), self.on_client_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_SQUAD_SAY'), self.on_client_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_PRIVATE_SAY'), self.on_client_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_GIB'), self.on_client_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_GIB_TEAM'), self.on_client_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_GIB_SELF'), self.on_client_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_KILL_TEAM'), self.on_client_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_DAMAGE'), self.on_client_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_DAMAGE_SELF'), self.on_client_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_DAMAGE_TEAM'), self.on_client_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_ITEM_PICKUP'), self.on_client_activity)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_ACTION'), self.on_client_activity)
+        self.registerEvent(self.eventmanager.getId('EVT_CLIENT_KILL'), self.on_kill)
+        self.registerEvent(self.eventmanager.getId('EVT_CLIENT_SUICIDE'), self.on_kill)
 
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_KILL'), self.on_kill)
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_SUICIDE'), self.on_kill)
+        self.registerEvent(self.eventmanager.getId('EVT_CLIENT_DISCONNECT'), self.on_client_disconnect)
 
-        self.registerEvent(self.console.getEventID('EVT_CLIENT_DISCONNECT'), self.on_client_disconnect)
+        self.registerEvent(self.eventmanager.getId('EVT_GAME_ROUND_START'), self.on_game_break)
+        self.registerEvent(self.eventmanager.getId('EVT_GAME_ROUND_END'), self.on_game_break)
+        self.registerEvent(self.eventmanager.getId('EVT_GAME_WARMUP'), self.on_game_break)
+        self.registerEvent(self.eventmanager.getId('EVT_GAME_MAP_CHANGE'), self.on_game_break)
 
-        self.registerEvent(self.console.getEventID('EVT_GAME_ROUND_START'), self.on_game_break)
-        self.registerEvent(self.console.getEventID('EVT_GAME_ROUND_END'), self.on_game_break)
-        self.registerEvent(self.console.getEventID('EVT_GAME_WARMUP'), self.on_game_break)
-        self.registerEvent(self.console.getEventID('EVT_GAME_MAP_CHANGE'), self.on_game_break)
+        activity_events = set([
+            'EVT_CLIENT_CONNECT',
+            'EVT_CLIENT_AUTH',
+            'EVT_CLIENT_JOIN',
+            'EVT_CLIENT_TEAM_CHANGE',
+            'EVT_CLIENT_TEAM_CHANGE2',
+            'EVT_CLIENT_SAY',
+            'EVT_CLIENT_TEAM_SAY',
+            'EVT_CLIENT_SQUAD_SAY',
+            'EVT_CLIENT_PRIVATE_SAY',
+            'EVT_CLIENT_GIB',
+            'EVT_CLIENT_GIB_TEAM',
+            'EVT_CLIENT_GIB_SELF',
+            'EVT_CLIENT_KILL_TEAM',
+            'EVT_CLIENT_DAMAGE',
+            'EVT_CLIENT_DAMAGE_SELF',
+            'EVT_CLIENT_DAMAGE_TEAM',
+            'EVT_CLIENT_ITEM_PICKUP',
+            'EVT_CLIENT_ACTION',
+            # UrT 4.1 & 4.2
+            'EVT_CLIENT_GEAR_CHANGE',
+            # UrT 4.2
+            'EVT_CLIENT_RADIO',
+            'EVT_CLIENT_CALLVOTE',
+            'EVT_CLIENT_VOTE',
+            'EVT_CLIENT_JUMP_RUN_START',
+            'EVT_CLIENT_JUMP_RUN_STOP',
+            'EVT_CLIENT_JUMP_RUN_CANCEL',
+            'EVT_CLIENT_POS_SAVE',
+            'EVT_CLIENT_POS_LOAD',
+            'EVT_CLIENT_GOTO',
+            # BF4, BFH
+            'EVT_CLIENT_COMROSE',
+            # Frostbite engine
+            'EVT_CLIENT_SQUAD_CHANGE',
+        ])
 
-        if self.console.gameName in ('iourt41', 'iourt42'):
-            self.registerEvent(self.console.getEventID('EVT_CLIENT_GEAR_CHANGE'), self.on_client_activity)
-
-        if self.console.gameName == 'iourt42':
-            self.registerEvent(self.console.getEventID('EVT_CLIENT_RADIO'), self.on_client_activity)
-            self.registerEvent(self.console.getEventID('EVT_CLIENT_CALLVOTE'), self.on_client_activity)
-            self.registerEvent(self.console.getEventID('EVT_CLIENT_VOTE'), self.on_client_activity)
-            self.registerEvent(self.console.getEventID('EVT_CLIENT_JUMP_RUN_START'), self.on_client_activity)
-            self.registerEvent(self.console.getEventID('EVT_CLIENT_JUMP_RUN_STOP'), self.on_client_activity)
-            self.registerEvent(self.console.getEventID('EVT_CLIENT_JUMP_RUN_CANCEL'), self.on_client_activity)
-            self.registerEvent(self.console.getEventID('EVT_CLIENT_POS_SAVE'), self.on_client_activity)
-            self.registerEvent(self.console.getEventID('EVT_CLIENT_POS_LOAD'), self.on_client_activity)
-            self.registerEvent(self.console.getEventID('EVT_CLIENT_GOTO'), self.on_client_activity)
+        for event_key in activity_events:
+            try:
+                event_id = self.eventmanager.getId(event_key)
+            except KeyError:
+                pass
+            else:
+                self.registerEvent(event_id, self.on_client_activity)
 
     def onDisable(self):
         self.info("stopping timers")

@@ -50,6 +50,9 @@ Take a look at the `@b3/extplugins/afk/conf/plugin_afk.ini` file. All settings a
 Changelog
 ---------
 
+### 1.6 - 2015/03/28
+- improve activity detection for Frostbite games 
+
 ### 1.5 - 2015/03/26
 - players are checked for inactivity after a certain number of consecutive deaths (instead of every x sec)
 
