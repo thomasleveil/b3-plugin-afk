@@ -52,6 +52,9 @@ class AfkPlugin(Plugin):
         """:type : str"""
         self.are_you_afk = None
 
+        """:type : str"""
+        self.suspicion_announcement = None
+
         """:type : Timer"""
         self.immunity_level = 100
 
@@ -137,6 +140,8 @@ class AfkPlugin(Plugin):
         self.load_conf_last_chance_delay(default=20, min_value=15, max_value=60)
         self.load_conf_kick_reason()
         self.load_conf_are_you_afk()
+        self.load_conf_suspicion_announcement(
+            default="{name} suspected of being AFK, kicking in {last_chance_delay}s if no answer")
         self.load_conf_immunity_level()
         self.stop_kick_timers()
 
@@ -207,6 +212,20 @@ class AfkPlugin(Plugin):
         except (NoOptionError, ValueError), err:
             self.warning("No value or bad value for settings/are_you_afk. %s", err)
             self.are_you_afk = "Are you AFK?"
+
+    def load_conf_suspicion_announcement(self, default):
+        try:
+            self.suspicion_announcement = self.config.get('settings', 'suspicion_announcement')
+            if len(self.suspicion_announcement.strip()) == 0:
+                raise ValueError()
+            if "{name}" not in self.suspicion_announcement:
+                raise ValueError("missing placeholder {name}")
+            if "{last_chance_delay}" not in self.suspicion_announcement:
+                raise ValueError("missing placeholder {last_chance_delay}")
+        except (NoOptionError, ValueError), err:
+            self.warning("No value or bad value for settings/suspicion_announcement. %s", err)
+            self.suspicion_announcement = default
+        self.info('settings/suspicion_announcement: %s' % self.suspicion_announcement)
 
     def load_conf_immunity_level(self):
         try:
@@ -334,8 +353,7 @@ class AfkPlugin(Plugin):
             return
         self.info("%r suspected of being AFK" % client)
         client.message(self.are_you_afk)
-        self.console.say("%s suspected of being AFK, kicking in %ss if no answer"
-                         % (client.name, self.last_chance_delay))
+        self.console.say(self.suspicion_announcement.format(name=client.name, last_chance_delay=self.last_chance_delay))
         t = Timer(self.last_chance_delay, self.kick_client, (client, ))
         t.start()
         self.kick_timers[client] = t
@@ -370,3 +388,4 @@ class AfkPlugin(Plugin):
         Log a VERBOSE2 message to the main log. More "chatty" than a VERBOSE message.
         """
         self.console.verbose2('%s: %s' % (self.__class__.__name__, msg), *args, **kwargs)
+

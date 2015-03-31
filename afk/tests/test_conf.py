@@ -3,6 +3,8 @@ from textwrap import dedent
 from mock import Mock
 from afk.tests import *
 
+DEFAULT_SUSPICION_ANNOUNCEMENT = "{name} suspected of being AFK, kicking in {last_chance_delay}s if no answer"
+
 
 @pytest.mark.skipif(not os.path.exists(DEFAULT_PLUGIN_CONFIG_FILE), reason="Could not find default plugin config file %r" % DEFAULT_PLUGIN_CONFIG_FILE)
 def test_default_conf(console):
@@ -14,6 +16,7 @@ def test_default_conf(console):
     assert 20 == plugin.last_chance_delay
     assert "AFK for too long on this server" == plugin.kick_reason
     assert "Are you AFK?" == plugin.are_you_afk
+    assert DEFAULT_SUSPICION_ANNOUNCEMENT == plugin.suspicion_announcement
 
 
 def test_empty_conf(console):
@@ -25,6 +28,7 @@ def test_empty_conf(console):
     assert 20 == plugin.last_chance_delay
     assert "AFK for too long on this server" == plugin.kick_reason
     assert "Are you AFK?" == plugin.are_you_afk
+    assert DEFAULT_SUSPICION_ANNOUNCEMENT == plugin.suspicion_announcement
 
 
 def test_bad_values(console):
@@ -36,6 +40,7 @@ def test_bad_values(console):
         last_chance_delay: f00
         kick_reason:
         are_you_afk:
+        suspicion_announcement:
         """))
     plugin.onLoadConfig()
     assert 1 == plugin.min_ingame_humans
@@ -44,6 +49,7 @@ def test_bad_values(console):
     assert 20 == plugin.last_chance_delay
     assert "AFK for too long on this server" == plugin.kick_reason
     assert "Are you AFK?" == plugin.are_you_afk
+    assert DEFAULT_SUSPICION_ANNOUNCEMENT == plugin.suspicion_announcement
 
 
 def test_min_ingame_humans(console):
@@ -169,3 +175,46 @@ def test_immunity_level_nominal(console):
     plugin.onLoadConfig()
     assert 40 == plugin.immunity_level
 
+
+def test_suspicion_announcement(console):
+    plugin = plugin_maker_ini(console, dedent("""
+        [settings]
+        suspicion_announcement: f00 {name} bar {last_chance_delay} foo
+        """))
+    plugin.onLoadConfig()
+    assert "f00 {name} bar {last_chance_delay} foo" == plugin.suspicion_announcement
+
+
+def test_suspicion_announcement_missing(console):
+    plugin = plugin_maker_ini(console, dedent("""
+        [settings]
+        """))
+    plugin.onLoadConfig()
+    assert DEFAULT_SUSPICION_ANNOUNCEMENT == plugin.suspicion_announcement
+
+
+def test_suspicion_announcement_empty(console):
+    plugin = plugin_maker_ini(console, dedent("""
+        [settings]
+        suspicion_announcement:
+        """))
+    plugin.onLoadConfig()
+    assert DEFAULT_SUSPICION_ANNOUNCEMENT == plugin.suspicion_announcement
+
+
+def test_suspicion_announcement_missing_name(console):
+    plugin = plugin_maker_ini(console, dedent("""
+        [settings]
+        suspicion_announcement: f00 {last_chance_delay}s bar
+        """))
+    plugin.onLoadConfig()
+    assert DEFAULT_SUSPICION_ANNOUNCEMENT == plugin.suspicion_announcement
+
+
+def test_suspicion_announcement_missing_last_chance_delay(console):
+    plugin = plugin_maker_ini(console, dedent("""
+        [settings]
+        suspicion_announcement: f00 {name}s bar
+        """))
+    plugin.onLoadConfig()
+    assert DEFAULT_SUSPICION_ANNOUNCEMENT == plugin.suspicion_announcement
