@@ -44,7 +44,7 @@ class AfkPlugin(Plugin):
         self.inactivity_threshold_second = 50
 
         """:type : int"""
-        self.last_chance_delay = 20
+        self.last_chance_delay = None
 
         """:type : str"""
         self.kick_reason = None
@@ -134,6 +134,7 @@ class AfkPlugin(Plugin):
         self.load_conf_min_ingame_humans()
         self.load_conf_consecutive_deaths_threshold()
         self.load_conf_inactivity_threshold()
+        self.load_conf_last_chance_delay(default=20, min_value=15, max_value=60)
         self.load_conf_kick_reason()
         self.load_conf_are_you_afk()
         self.load_conf_immunity_level()
@@ -149,8 +150,6 @@ class AfkPlugin(Plugin):
                 self.warning("settings/min_ingame_humans cannot be less than 0")
                 self.min_ingame_humans = 0
         self.info('settings/min_ingame_humans: %s ' % self.min_ingame_humans)
-
-
 
     def load_conf_consecutive_deaths_threshold(self):
         try:
@@ -173,6 +172,21 @@ class AfkPlugin(Plugin):
                 self.warning("settings/inactivity_threshold cannot be less than 30 sec")
                 self.inactivity_threshold_second = 30
         self.info('settings/inactivity_threshold: %s sec' % self.inactivity_threshold_second)
+
+    def load_conf_last_chance_delay(self, default, min_value, max_value):
+        try:
+            self.last_chance_delay = self.config.getint('settings', 'last_chance_delay')
+        except (NoOptionError, ValueError), err:
+            self.warning("No value or bad value for settings/last_chance_delay. %s", err)
+            self.last_chance_delay = default
+        else:
+            if self.last_chance_delay < min_value:
+                self.warning("settings/last_chance_delay cannot be less than %s sec" % min_value)
+                self.last_chance_delay = min_value
+            elif self.last_chance_delay > max_value:
+                self.warning("settings/last_chance_delay cannot be higher than %s sec" % max_value)
+                self.last_chance_delay = max_value
+        self.info('settings/last_chance_delay: %s sec' % self.last_chance_delay)
 
     def load_conf_kick_reason(self):
         try:

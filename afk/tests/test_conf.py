@@ -11,6 +11,7 @@ def test_default_conf(console):
     assert 1 == plugin.min_ingame_humans
     assert 3 == plugin.consecutive_deaths_threshold
     assert 50 == plugin.inactivity_threshold_second
+    assert 20 == plugin.last_chance_delay
     assert "AFK for too long on this server" == plugin.kick_reason
     assert "Are you AFK?" == plugin.are_you_afk
 
@@ -21,6 +22,7 @@ def test_empty_conf(console):
     assert 1 == plugin.min_ingame_humans
     assert 3 == plugin.consecutive_deaths_threshold
     assert 50 == plugin.inactivity_threshold_second
+    assert 20 == plugin.last_chance_delay
     assert "AFK for too long on this server" == plugin.kick_reason
     assert "Are you AFK?" == plugin.are_you_afk
 
@@ -31,6 +33,7 @@ def test_bad_values(console):
         min_ingame_humans: mlkj
         consecutive_deaths_threshold: f00
         inactivity_threshold: bar
+        last_chance_delay: f00
         kick_reason:
         are_you_afk:
         """))
@@ -38,6 +41,7 @@ def test_bad_values(console):
     assert 1 == plugin.min_ingame_humans
     assert 3 == plugin.consecutive_deaths_threshold
     assert 30 == plugin.inactivity_threshold_second
+    assert 20 == plugin.last_chance_delay
     assert "AFK for too long on this server" == plugin.kick_reason
     assert "Are you AFK?" == plugin.are_you_afk
 
@@ -85,6 +89,59 @@ def test_inactivity_threshold_minute(console):
         """))
     plugin.onLoadConfig()
     assert 60 == plugin.inactivity_threshold_second
+
+
+def test_last_chance_delay(console):
+    plugin = plugin_maker_ini(console, dedent("""
+        [settings]
+        last_chance_delay: 34
+        """))
+    plugin.onLoadConfig()
+    assert 34 == plugin.last_chance_delay
+
+
+def test_last_chance_delay_missing(console):
+    plugin = plugin_maker_ini(console, dedent("""
+        [settings]
+        """))
+    plugin.onLoadConfig()
+    assert 20 == plugin.last_chance_delay
+
+
+def test_last_chance_delay_empty(console):
+    plugin = plugin_maker_ini(console, dedent("""
+        [settings]
+        last_chance_delay:
+        """))
+    plugin.onLoadConfig()
+    assert 20 == plugin.last_chance_delay
+
+
+def test_last_chance_delay_bad_value(console):
+    plugin = plugin_maker_ini(console, dedent("""
+        [settings]
+        last_chance_delay: f00
+        """))
+    plugin.onLoadConfig()
+    assert 20 == plugin.last_chance_delay
+
+
+def test_last_chance_delay_too_low(console):
+    plugin = plugin_maker_ini(console, dedent("""
+        [settings]
+        last_chance_delay: 14
+        """))
+    plugin.onLoadConfig()
+    assert 15 == plugin.last_chance_delay
+
+
+def test_last_chance_delay_too_high(console):
+    plugin = plugin_maker_ini(console, dedent("""
+        [settings]
+        last_chance_delay: 61
+        """))
+    plugin.onLoadConfig()
+    assert 60 == plugin.last_chance_delay
 
 
 def test_immunity_level_missing(console):
