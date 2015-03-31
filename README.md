@@ -50,6 +50,9 @@ Take a look at the `@b3/extplugins/afk/conf/plugin_afk.ini` file. All settings a
 Changelog
 ---------
 
+### 1.7 - 2015/03/31
+- add `suspicion_announcement` and `last_chance_delay` to config file
+
 ### 1.6 - 2015/03/28
 - improve activity detection for Frostbite games 
 

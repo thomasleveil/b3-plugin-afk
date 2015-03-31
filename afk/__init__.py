@@ -25,7 +25,7 @@ from b3.plugin import Plugin
 from weakref import WeakKeyDictionary
 
 __author__ = "Thomas LEVEIL"
-__version__ = "1.6"
+__version__ = "1.7"
 
 
 class AfkPlugin(Plugin):
