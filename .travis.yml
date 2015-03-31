@@ -14,7 +14,7 @@ install:
   - pip install -e ${B3_REPO}
 
 # command to run tests, e.g. python setup.py test
-script: PYTHONPATH=extplugins py.test --cov=afk --cov-report=term-missing afk/tests
+script: PYTHONPATH=extplugins py.test --cov-config .coveragerc --cov=afk --cov-report=term-missing afk/tests
 
 after_success:
   - pip install python-coveralls
