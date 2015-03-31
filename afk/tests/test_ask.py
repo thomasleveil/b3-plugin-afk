@@ -92,3 +92,18 @@ def test_make_kill(plugin, joe):
     sleep(.01)
     assert [] == plugin.kick_client.mock_calls
 
+
+def test_ask_twice(plugin, joe):
+    # GIVEN
+    joe.message = Mock()
+    # WHEN
+    plugin.ask_client(joe)
+    # THEN
+    assert [call('Are you AFK?')] == joe.message.mock_calls
+    assert joe in plugin.kick_timers
+    assert [call("Joe is AFK, kicking in 23s")] == plugin.console.say.mock_calls
+    # WHEN
+    plugin.ask_client(joe)
+    assert [call('Are you AFK?')] == joe.message.mock_calls
+    assert joe in plugin.kick_timers
+    assert [call("Joe is AFK, kicking in 23s")] == plugin.console.say.mock_calls

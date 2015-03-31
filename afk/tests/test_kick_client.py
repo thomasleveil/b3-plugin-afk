@@ -81,11 +81,12 @@ def test_activity_at_the_last_second(plugin, joe):
     assert [call(reason='AFK for too long on this server')] == joe.kick.mock_calls
 
 
-def test_player_moved_to_spec(plugin, joe):
+def test_player_moved_to_spec(plugin, joe, jack):
     # GIVEN
     joe.kick = Mock()
     plugin.min_ingame_humans = 0
     joe.connects(1)
+    jack.connects(2)
 
     # WHEN
     joe.team = TEAM_SPEC

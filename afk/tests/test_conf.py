@@ -79,6 +79,15 @@ def test_consecutive_deaths_threshold(console):
     assert 2 == plugin.consecutive_deaths_threshold
 
 
+def test_consecutive_deaths_threshold_too_low(console):
+    plugin = plugin_maker_ini(console, dedent("""
+        [settings]
+        consecutive_deaths_threshold: 0
+        """))
+    plugin.onLoadConfig()
+    assert 1 == plugin.consecutive_deaths_threshold
+
+
 def test_inactivity_threshold_too_low(console):
     plugin = plugin_maker_ini(console, dedent("""
         [settings]
