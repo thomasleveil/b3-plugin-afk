@@ -64,6 +64,9 @@ class AfkPlugin(Plugin):
         """:type : dict[Client, threading.Timer]"""
         self.kick_timers = WeakKeyDictionary()
 
+        """:type : int"""
+        self.last_global_check_time = time()
+
     def onStartup(self):
         """
         Initialize plugin.
@@ -77,6 +80,8 @@ class AfkPlugin(Plugin):
         self.registerEvent(self.eventmanager.getId('EVT_GAME_ROUND_END'), self.on_game_break)
         self.registerEvent(self.eventmanager.getId('EVT_GAME_WARMUP'), self.on_game_break)
         self.registerEvent(self.eventmanager.getId('EVT_GAME_MAP_CHANGE'), self.on_game_break)
+
+        self.registerEvent(self.eventmanager.getId('EVT_CLIENT_SAY'), self.on_say)
 
         activity_events = set([
             'EVT_CLIENT_CONNECT',
@@ -162,9 +167,9 @@ class AfkPlugin(Plugin):
         except (NoOptionError, ValueError), err:
             self.warning("No value or bad value for settings/consecutive_deaths_threshold. %s", err)
         else:
-            if self.consecutive_deaths_threshold < 1:
-                self.warning("settings/consecutive_deaths_threshold cannot be less than 1")
-                self.consecutive_deaths_threshold = 1
+            if self.consecutive_deaths_threshold < 0:
+                self.warning("settings/consecutive_deaths_threshold cannot be less than 0")
+                self.consecutive_deaths_threshold = 0
         self.info('settings/consecutive_deaths_threshold: %s ' % self.consecutive_deaths_threshold)
 
     def load_conf_inactivity_threshold(self):
@@ -280,20 +285,20 @@ class AfkPlugin(Plugin):
            ingame_humans > self.min_ingame_humans:
             self.check_client(event.target)
 
-    def on_client_activity(self, event, when=None):
+    def on_client_activity(self, event, now=None):
         """
-        update Client.last_activity_time.
+        acknowledge client activity
 
         :param event: b3.events.Event
-        :param when: int (optional) the time the activity happened. If None, current time is used.
+        :param now: int (optional) the time the activity happened. If None, current time is used.
         """
         if not event.client:
             return
-        if when is None:
-            when = time()
+        if now is None:
+            now = time()
         if event.client in self.kick_timers:
             event.client.message("OK, you are not AFK")
-        event.client.last_activity_time = when
+        event.client.last_activity_time = now
         event.client.afk_death_count = 0
         self.clear_kick_timer_for_client(event.client)
 
@@ -309,11 +314,33 @@ class AfkPlugin(Plugin):
             del client.last_activity_time
             del client.afk_death_count
 
+    def on_say(self, event):
+        if "afk" in event.data.lower():
+            self.check_all_clients()
+
     ####################################################################################################################
     #                                                                                                                  #
     #   OTHERS                                                                                                         #
     #                                                                                                                  #
     ####################################################################################################################
+
+    def check_all_clients(self, now=None):
+        """
+        if last check was older than 15s ago, check all clients for inactivity
+
+        :param now: int (optional) the time the activity happened. If None, current time is used.
+        """
+        if now is None:
+            now = time()
+        last_check_ago = now - self.last_global_check_time
+
+        if last_check_ago > 15:
+            list_of_players = [x for x in self.console.clients.getList()
+                               if x.team != TEAM_SPEC and not getattr(x, 'bot', False)]
+            self.info("looking for afk players...")
+            self.last_global_check_time = now
+            for client in list_of_players:
+                self.check_client(client)
 
     def check_client(self, client):
         """
