@@ -50,6 +50,10 @@ Take a look at the `@b3/extplugins/afk/conf/plugin_afk.ini` file. All settings a
 Changelog
 ---------
 
+### 1.8 - 2015/04/01
+- `consecutive_deaths_threshold` can be set to `0` to be disabled
+- if anyone says the word 'afk' in chat, then all players are checked for inactivity
+
 ### 1.7 - 2015/03/31
 - add `suspicion_announcement` and `last_chance_delay` to config file
 
