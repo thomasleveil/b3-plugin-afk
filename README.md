@@ -33,7 +33,7 @@ Copy the `afk` directory into the `b3/extplugins` folder. Then activate the plug
 If your main B3 config file is in the `ini` format then add the following line in the `[plugins]` section:
 
 ```ini
-    afk: @b3/extplugins/afk/conf/plugin_afk.ini
+afk: @b3/extplugins/afk/conf/plugin_afk.ini
 ```
 
 ### b3.xml
