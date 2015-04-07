@@ -32,14 +32,26 @@ Copy the `afk` directory into the `b3/extplugins` folder. Then activate the plug
 
 If your main B3 config file is in the `ini` format then add the following line in the `[plugins]` section:
 
+```ini
     afk: @b3/extplugins/afk/conf/plugin_afk.ini
+```
 
 ### b3.xml
 
 If your main B3 config file is in the `xml` format then add the following line in the `<plugins>` section:
      
-     <plugin name="afk" config="@b3/extplugins/afk/conf/plugin_afk.ini" />
+```xml
+<plugin name="afk" config="@b3/extplugins/afk/conf/plugin_afk.ini" />
+```
      
+### Urban Terror 4.2
+
+If you are using the modified UrT 4.2 game engine, then you can improve the afk detection by also adding the 
+[urtposition B3 plugin](https://github.com/danielepantaleone/b3-plugin-urtposition).
+
+With this modified server and B3 plugin, players will be checked when the game server reports them as standing still
+and player movements will be recognised as player activity.
+
 
 Configuration
 -------------
@@ -49,6 +61,9 @@ Take a look at the `@b3/extplugins/afk/conf/plugin_afk.ini` file. All settings a
 
 Changelog
 ---------
+
+### 1.9 - 2015/04/08
+- improve support for UrT 4.2 modified servers (with B3 urtposition plugin) 
 
 ### 1.8 - 2015/04/01
 - `consecutive_deaths_threshold` can be set to `0` to be disabled

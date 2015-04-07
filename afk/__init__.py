@@ -25,7 +25,7 @@ from b3.plugin import Plugin
 from weakref import WeakKeyDictionary
 
 __author__ = "Thomas LEVEIL"
-__version__ = "1.8"
+__version__ = "1.9"
 
 
 class AfkPlugin(Plugin):
@@ -83,6 +83,16 @@ class AfkPlugin(Plugin):
 
         self.registerEvent(self.eventmanager.getId('EVT_CLIENT_SAY'), self.on_say)
 
+        # for UrT 4.2 modified, requires plugin `urtposition`
+        try:
+            event_id = self.eventmanager.getId('EVT_CLIENT_STANDING')
+        except KeyError:
+            pass
+        else:
+            self.registerEvent(event_id, self.on_client_standing)
+
+        self.registerEvent(self.eventmanager.getId('EVT_CLIENT_SAY'), self.on_say)
+
         activity_events = set([
             'EVT_CLIENT_CONNECT',
             'EVT_CLIENT_AUTH',
@@ -114,6 +124,8 @@ class AfkPlugin(Plugin):
             'EVT_CLIENT_POS_SAVE',
             'EVT_CLIENT_POS_LOAD',
             'EVT_CLIENT_GOTO',
+            # UrT 4.2 modified, requires plugin `urtposition`
+            'EVT_CLIENT_MOVE',
             # BF4, BFH
             'EVT_CLIENT_COMROSE',
             # Frostbite engine
@@ -301,6 +313,17 @@ class AfkPlugin(Plugin):
         event.client.last_activity_time = now
         event.client.afk_death_count = 0
         self.clear_kick_timer_for_client(event.client)
+
+    def on_client_standing(self, event):
+        """
+        Happens when we are notified a client is standing still.
+        Requires UrT 4.2 modified + urtposition B3 plugin
+
+        :param event: b3.events.Event
+        """
+        if not event.client:
+            return
+        self.check_client(event.client)
 
     def on_game_break(self, _):
         """
