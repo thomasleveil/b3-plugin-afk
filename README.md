@@ -5,6 +5,10 @@ A [BigBrotherBot][B3] plugin taking care of AFK players on your game server.
 This plugin monitors your game server for inactive players. If a player is suspected to be away from keyboard (AFK)
 B3 will ask him if he is. If no answer if given and no activity is detected in a timely manner, the player is kicked.
 
+******
+*NOTE: since B3 v1.10.1 beta this plugin has been included in the standard plugins set, thus all patches and updates will be performed in the official B3 repository.*
+******
+
 How does the plugin detect AFK?
 -------------------------------
 
